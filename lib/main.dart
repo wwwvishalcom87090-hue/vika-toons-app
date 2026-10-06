@@ -5,9 +5,14 @@ import 'package:video_player/video_player.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint("Firebase init error: $e");
+  }
   runApp(const VikaToonsApp());
 }
+
 
 class VikaToonsApp extends StatelessWidget {
   const VikaToonsApp({super.key});
