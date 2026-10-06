@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vika Toons - Stream Anime in Hindi</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background-color: #0b0c10; color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .neon-pill { background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.3); color: #fb7185; }
+    .glass-nav { background: rgba(11, 12, 16, 0.85); backdrop-filter: blur(16px); border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .hero-gradient { background: linear-gradient(0deg, #0b0c10 5%, rgba(11,12,16,0.7) 50%, rgba(11,12,16,0.2) 100%); }
+    .card-zoom:hover img { transform: scale(1.06); }
+    .active-server { background: #f43f5e !important; color: white !important; font-weight: bold; }
+    .active-ep { border-color: #f43f5e !important; background: rgba(244, 63, 94, 0.2) !important; color: #f43f5e !important; }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Header / Navigation Bar (Kitsunee Style) -->
+  <header class="fixed top-0 w-full z-50 glass-nav">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="window.scrollTo({top:0, behavior:'smooth'})">
+        <span class="text-2xl font-black tracking-wider bg-gradient-to-r from-rose-500 via-pink-500 to-violet-500 bg-clip-text text-transparent">VIKATOONS</span>
+        <span class="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full neon-pill">HINDI</span>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="relative w-48 sm:w-80">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+        <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="Search anime in Hindi..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-white/5 border border-white/10 rounded-full focus:outline-none focus:border-rose-500 text-gray-200 placeholder-gray-500">
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="admin.html" class="text-xs px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition text-gray-300 flex items-center gap-1.5">
+          <i class="fa-solid fa-lock text-[10px]"></i> Studio
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Spotlight Section (Auto pulls latest Anime) -->
+  <div id="heroSection" class="relative w-full h-[65vh] min-h-[420px] flex items-end pt-16 hidden">
+    <div id="heroBg" class="absolute inset-0 bg-cover bg-center transition-all duration-700"></div>
+    <div class="absolute inset-0 hero-gradient"></div>
+    
+    <div class="relative max-w-7xl mx-auto px-4 pb-12 w-full space-y-4">
+      <div class="flex items-center gap-2">
+        <span class="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 font-semibold">Featured Hindi</span>
+        <div id="heroGenres" class="flex gap-1.5 text-xs text-gray-400"></div>
+      </div>
+      <h1 id="heroTitle" class="text-3xl sm:text-5xl font-extrabold text-white max-w-2xl drop-shadow-lg leading-tight"></h1>
+      <p id="heroDesc" class="text-sm text-gray-300 max-w-xl line-clamp-3"></p>
+      
+      <div class="pt-2 flex items-center gap-3">
+        <button id="heroPlayBtn" class="px-6 py-3 rounded-full font-bold text-sm bg-rose-500 hover:bg-rose-600 transition flex items-center gap-2 shadow-lg shadow-rose-950/60 text-white">
+          <i class="fa-solid fa-play"></i> Watch Episode 1
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dedicated Video Stream Player Modal / Viewer -->
+  <div id="streamSection" class="max-w-7xl mx-auto px-4 pt-24 pb-8 hidden">
+    <div class="bg-[#12141c] rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+      <!-- Player Area -->
+      <div class="relative w-full pb-[56.25%] bg-black">
+        <iframe id="videoIframe" src="" class="absolute inset-0 w-full h-full border-0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+      </div>
+
+      <!-- Controls & Episodes Selector -->
+      <div class="p-4 sm:p-6 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 id="nowPlayingTitle" class="text-lg sm:text-2xl font-bold text-white"></h2>
+            <p id="nowPlayingEp" class="text-xs sm:text-sm text-rose-400 mt-0.5"></p>
+          </div>
+
+          <!-- Multi-Server Selector -->
+          <div class="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/10 text-xs">
+            <span class="text-gray-400 px-2">Servers:</span>
+            <button id="srvBtn1" onclick="switchServer(1)" class="px-3 py-1.5 rounded-lg active-server transition">Server 1 (Fast)</button>
+            <button id="srvBtn2" onclick="switchServer(2)" class="px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition">Server 2</button>
+          </div>
+        </div>
+
+        <!-- Episode Selector Buttons -->
+        <div class="border-t border-white/5 pt-4">
+          <h4 class="text-xs uppercase tracking-wider text-gray-400 mb-3 font-semibold">All Episodes</h4>
+          <div id="playerEpisodesList" class="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Catalog / Grid Section -->
+  <main class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+    <div class="flex items-center justify-between">
+      <h3 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+        <i class="fa-solid fa-fire text-rose-500"></i> Recently Added in Hindi
+      </h3>
+      <span id="animeCount" class="text-xs text-gray-500"></span>
+    </div>
+
+    <div id="catalogGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <p class="col-span-full text-gray-500 text-sm">Loading your custom anime...</p>
+    </div>
+  </main>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCBDaY37U8zkzAuUoiGdspKuEYcfNqTxM",
+      authDomain: "vika-toons.firebaseapp.com",
+      projectId: "vika-toons",
+      storageBucket: "vika-toons.firebasestorage.app",
+      messagingSenderId: "147555928932",
+      appId: "1:147555928932:web:345074c3bcf9d14ec30871",
+      measurementId: "G-0SL6FJMHLN"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let allAnimeList = [];
+    let currentEpisodes = [];
+    let activeEpisode = null;
+
+    // Load Catalog & Spotlight Hero
+    db.collection("animes").orderBy("createdAt", "desc").onSnapshot(snap => {
+      allAnimeList = [];
+      snap.forEach(doc => allAnimeList.push({ id: doc.id, ...doc.data() }));
+      renderCatalog(allAnimeList);
+
+      if (allAnimeList.length > 0) {
+        setupHero(allAnimeList[0]);
+      }
+    });
+
+    function renderCatalog(list) {
+      const grid = document.getElementById("catalogGrid");
+      grid.innerHTML = "";
+      document.getElementById("animeCount").innerText = `${list.length} Series`;
+
+      if (list.length === 0) {
+        grid.innerHTML = `<div class="col-span-full py-12 text-center text-gray-500">Koi anime nahi mila. Studio se add karein.</div>`;
+        return;
+      }
+
+      list.forEach(a => {
+        const card = document.createElement("div");
+        card.className = "group cursor-pointer card-zoom flex flex-col space-y-2";
+        card.onclick = () => loadAndPlayAnime(a);
+
+        card.innerHTML = `
+          <div class="relative aspect-[3/4] overflow-hidden rounded-xl bg-gray-900 border border-white/5 group-hover:border-rose-500/50 transition">
+            <img src="${a.poster}" alt="${a.title}" class="w-full h-full object-cover transition-transform duration-300" onerror="this.src='https://via.placeholder.com/200x280?text=No+Poster'">
+            <div class="absolute top-2 left-2 px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500 text-white">DUB</div>
+            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+              <div class="w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg"><i class="fa-solid fa-play"></i></div>
+            </div>
+          </div>
+          <h4 class="text-xs font-semibold text-gray-200 truncate group-hover:text-rose-400 transition">${a.title}</h4>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function setupHero(anime) {
+      const hero = document.getElementById("heroSection");
+      hero.classList.remove("hidden");
+      document.getElementById("heroBg").style.backgroundImage = `url('${anime.banner || anime.poster}')`;
+      document.getElementById("heroTitle").innerText = anime.title;
+      document.getElementById("heroDesc").innerText = anime.description || "Hindi Dubbed Stream available now on Vika Toons.";
+      
+      const genBox = document.getElementById("heroGenres");
+      genBox.innerHTML = "";
+      if (anime.genres) {
+        anime.genres.forEach(g => {
+          genBox.innerHTML += `<span>• ${g}</span>`;
+        });
+      }
+
+      document.getElementById("heroPlayBtn").onclick = () => loadAndPlayAnime(anime);
+    }
+
+    // Play Anime
+    async function loadAndPlayAnime(anime) {
+      const epSnap = await db.collection("animes").doc(anime.id).collection("episodes").orderBy("number", "asc").get();
+      currentEpisodes = [];
+      epSnap.forEach(d => currentEpisodes.push({ id: d.id, ...d.data() }));
+
+      if (currentEpisodes.length === 0) {
+        alert("Is anime me abhi koi episode upload nahi hua hai! Admin panel se episode link add karein.");
+        return;
+      }
+
+      const streamSec = document.getElementById("streamSection");
+      streamSec.classList.remove("hidden");
+      streamSec.scrollIntoView({ behavior: 'smooth' });
+
+      renderEpisodeButtons(anime);
+      playEpisode(currentEpisodes[0], anime);
+    }
+
+    function renderEpisodeButtons(anime) {
+      const box = document.getElementById("playerEpisodesList");
+      box.innerHTML = "";
+
+      currentEpisodes.forEach((ep, i) => {
+        const btn = document.createElement("button");
+        btn.id = `epBtn-${ep.id}`;
+        btn.className = `px-3 py-1.5 rounded-lg border border-white/10 bg-black/40 text-xs text-gray-300 hover:border-rose-500 transition ${i === 0 ? 'active-ep' : ''}`;
+        btn.innerText = `EP ${ep.number}`;
+        btn.onclick = () => {
+          document.querySelectorAll("#playerEpisodesList button").forEach(b => b.classList.remove("active-ep"));
+          btn.classList.add("active-ep");
+          playEpisode(ep, anime);
+        };
+        box.appendChild(btn);
+      });
+    }
+
+    function playEpisode(ep, anime) {
+      activeEpisode = ep;
+      document.getElementById("nowPlayingTitle").innerText = anime.title;
+      document.getElementById("nowPlayingEp").innerText = `Now Playing: Episode ${ep.number} - ${ep.title}`;
+      
+      // Default to Server 1
+      switchServer(1);
+
+      // Disable server 2 button if not provided
+      const s2 = document.getElementById("srvBtn2");
+      if (!ep.server2) {
+        s2.classList.add("opacity-40", "pointer-events-none");
+      } else {
+        s2.classList.remove("opacity-40", "pointer-events-none");
+      }
+    }
+
+    function switchServer(num) {
+      if (!activeEpisode) return;
+      const b1 = document.getElementById("srvBtn1");
+      const b2 = document.getElementById("srvBtn2");
+      const iframe = document.getElementById("videoIframe");
+
+      if (num === 1) {
+        b1.className = "px-3 py-1.5 rounded-lg active-server transition";
+        b2.className = "px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition";
+        iframe.src = activeEpisode.server1;
+      } else {
+        if (!activeEpisode.server2) return;
+        b2.className = "px-3 py-1.5 rounded-lg active-server transition";
+        b1.className = "px-3 py-1.5 rounded-lg text-gray-400 hover:text-white transition";
+        iframe.src = activeEpisode.server2;
+      }
+    }
+
+    function handleSearch(query) {
+      const q = query.toLowerCase().trim();
+      const filtered = allAnimeList.filter(a => a.title.toLowerCase().includes(q) || (a.genres && a.genres.some(g => g.toLowerCase().includes(q))));
+      renderCatalog(filtered);
+    }
+  </script>
+</body>
+</html>
