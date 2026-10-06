@@ -20,7 +20,6 @@
 </head>
 <body class="min-h-screen">
 
-  <!-- Header / Navigation Bar (Kitsunee Style) -->
   <header class="fixed top-0 w-full z-50 glass-nav">
     <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3 cursor-pointer" onclick="window.scrollTo({top:0, behavior:'smooth'})">
@@ -28,21 +27,13 @@
         <span class="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full neon-pill">HINDI</span>
       </div>
 
-      <!-- Search Bar -->
       <div class="relative w-48 sm:w-80">
         <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
         <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="Search anime in Hindi..." class="w-full pl-9 pr-3 py-1.5 text-xs bg-white/5 border border-white/10 rounded-full focus:outline-none focus:border-rose-500 text-gray-200 placeholder-gray-500">
       </div>
-
-      <div class="flex items-center gap-3">
-        <a href="admin.html" class="text-xs px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 transition text-gray-300 flex items-center gap-1.5">
-          <i class="fa-solid fa-lock text-[10px]"></i> Studio
-        </a>
-      </div>
     </div>
   </header>
 
-  <!-- Hero Spotlight Section (Auto pulls latest Anime) -->
   <div id="heroSection" class="relative w-full h-[65vh] min-h-[420px] flex items-end pt-16 hidden">
     <div id="heroBg" class="absolute inset-0 bg-cover bg-center transition-all duration-700"></div>
     <div class="absolute inset-0 hero-gradient"></div>
@@ -63,15 +54,12 @@
     </div>
   </div>
 
-  <!-- Dedicated Video Stream Player Modal / Viewer -->
   <div id="streamSection" class="max-w-7xl mx-auto px-4 pt-24 pb-8 hidden">
     <div class="bg-[#12141c] rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-      <!-- Player Area -->
       <div class="relative w-full pb-[56.25%] bg-black">
         <iframe id="videoIframe" src="" class="absolute inset-0 w-full h-full border-0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
       </div>
 
-      <!-- Controls & Episodes Selector -->
       <div class="p-4 sm:p-6 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -79,7 +67,6 @@
             <p id="nowPlayingEp" class="text-xs sm:text-sm text-rose-400 mt-0.5"></p>
           </div>
 
-          <!-- Multi-Server Selector -->
           <div class="flex items-center gap-2 bg-black/40 p-1 rounded-xl border border-white/10 text-xs">
             <span class="text-gray-400 px-2">Servers:</span>
             <button id="srvBtn1" onclick="switchServer(1)" class="px-3 py-1.5 rounded-lg active-server transition">Server 1 (Fast)</button>
@@ -87,7 +74,6 @@
           </div>
         </div>
 
-        <!-- Episode Selector Buttons -->
         <div class="border-t border-white/5 pt-4">
           <h4 class="text-xs uppercase tracking-wider text-gray-400 mb-3 font-semibold">All Episodes</h4>
           <div id="playerEpisodesList" class="flex flex-wrap gap-2 max-h-40 overflow-y-auto pr-1"></div>
@@ -96,7 +82,6 @@
     </div>
   </div>
 
-  <!-- Catalog / Grid Section -->
   <main class="max-w-7xl mx-auto px-4 py-8 space-y-6">
     <div class="flex items-center justify-between">
       <h3 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
@@ -106,7 +91,7 @@
     </div>
 
     <div id="catalogGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-      <p class="col-span-full text-gray-500 text-sm">Loading your custom anime...</p>
+      <p class="col-span-full text-gray-500 text-sm">Loading custom anime...</p>
     </div>
   </main>
 
@@ -128,7 +113,6 @@
     let currentEpisodes = [];
     let activeEpisode = null;
 
-    // Load Catalog & Spotlight Hero
     db.collection("animes").orderBy("createdAt", "desc").onSnapshot(snap => {
       allAnimeList = [];
       snap.forEach(doc => allAnimeList.push({ id: doc.id, ...doc.data() }));
@@ -145,7 +129,7 @@
       document.getElementById("animeCount").innerText = `${list.length} Series`;
 
       if (list.length === 0) {
-        grid.innerHTML = `<div class="col-span-full py-12 text-center text-gray-500">Koi anime nahi mila. Studio se add karein.</div>`;
+        grid.innerHTML = `<div class="col-span-full py-12 text-center text-gray-500">Koi anime nahi mila.</div>`;
         return;
       }
 
@@ -186,14 +170,13 @@
       document.getElementById("heroPlayBtn").onclick = () => loadAndPlayAnime(anime);
     }
 
-    // Play Anime
     async function loadAndPlayAnime(anime) {
       const epSnap = await db.collection("animes").doc(anime.id).collection("episodes").orderBy("number", "asc").get();
       currentEpisodes = [];
       epSnap.forEach(d => currentEpisodes.push({ id: d.id, ...d.data() }));
 
       if (currentEpisodes.length === 0) {
-        alert("Is anime me abhi koi episode upload nahi hua hai! Admin panel se episode link add karein.");
+        alert("Is anime me abhi koi episode upload nahi hua hai!");
         return;
       }
 
@@ -228,10 +211,8 @@
       document.getElementById("nowPlayingTitle").innerText = anime.title;
       document.getElementById("nowPlayingEp").innerText = `Now Playing: Episode ${ep.number} - ${ep.title}`;
       
-      // Default to Server 1
       switchServer(1);
 
-      // Disable server 2 button if not provided
       const s2 = document.getElementById("srvBtn2");
       if (!ep.server2) {
         s2.classList.add("opacity-40", "pointer-events-none");
