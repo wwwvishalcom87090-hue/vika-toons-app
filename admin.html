@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vika Toons - Studio Admin Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { background: #090a0f; color: #f3f4f6; }
+    .glass { background: rgba(18, 20, 29, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
+    .accent-btn { background: linear-gradient(135deg, #f43f5e, #8b5cf6); }
+    .accent-btn:hover { background: linear-gradient(135deg, #e11d48, #7c3aed); }
+  </style>
+</head>
+<body class="p-4 md:p-8 font-sans">
+  <div class="max-w-6xl mx-auto space-y-8">
+    <header class="flex justify-between items-center pb-6 border-b border-gray-800">
+      <div>
+        <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-rose-500 to-violet-500 bg-clip-text text-transparent">VIKA TOONS STUDIO</h1>
+        <p class="text-sm text-gray-400 mt-1">Full-Control Hindi Anime Management</p>
+      </div>
+      <a href="index.html" target="_blank" class="px-4 py-2 glass rounded-lg text-sm text-rose-400 hover:text-white flex items-center gap-2">
+        <i class="fa-solid fa-arrow-up-right-from-square"></i> Live Website Dekhein
+      </a>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Create / Add Anime Form -->
+      <div class="glass p-6 rounded-2xl h-fit">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-rose-400">
+          <i class="fa-solid fa-film"></i> Naya Anime Add Karein
+        </h2>
+        <form id="animeForm" onsubmit="handleCreateAnime(event)" class="space-y-4 text-sm">
+          <div>
+            <label class="block text-gray-400 mb-1">Anime Name *</label>
+            <input type="text" id="animeTitle" required placeholder="e.g. Naruto Shippuden (Hindi Dub)" class="w-full px-3 py-2 bg-black/40 border border-gray-700 rounded-lg focus:outline-none focus:border-rose-500">
+          </div>
+          <div>
+            <label class="block text-gray-400 mb-1">Poster Image URL *</label>
+            <input type="url" id="animePoster" required placeholder="https://image-link.jpg" class="w-full px-3 py-2 bg-black/40 border border-gray-700 rounded-lg focus:outline-none focus:border-rose-500">
+          </div>
+          <div>
+            <label class="block text-gray-400 mb-1">Hero Banner Image URL (Optional)</label>
+            <input type="url" id="animeBanner" placeholder="Wide landscape image URL" class="w-full px-3 py-2 bg-black/40 border border-gray-700 rounded-lg focus:outline-none focus:border-rose-500">
+          </div>
+          <div>
+            <label class="block text-gray-400 mb-1">Genres / Tags (Comma separated)</label>
+            <input type="text" id="animeGenres" placeholder="Action, Adventure, Fantasy" class="w-full px-3 py-2 bg-black/40 border border-gray-700 rounded-lg focus:outline-none focus:border-rose-500">
+          </div>
+          <div>
+            <label class="block text-gray-400 mb-1">Story / Description</label>
+            <textarea id="animeDescription" rows="3" placeholder="Anime ki story summary..." class="w-full px-3 py-2 bg-black/40 border border-gray-700 rounded-lg focus:outline-none focus:border-rose-500"></textarea>
+          </div>
+          <button type="submit" class="w-full py-3 rounded-lg font-bold accent-btn text-white transition shadow-lg shadow-rose-950">Anime Save Karein</button>
+        </form>
+      </div>
+
+      <!-- Episode Management & Anime List -->
+      <div class="lg:col-span-2 space-y-6">
+        <!-- Add Episode Section (Active upon Anime selection) -->
+        <div id="episodeBox" class="glass p-6 rounded-2xl hidden">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-violet-400 flex items-center gap-2">
+              <i class="fa-solid fa-play"></i> Episode Add Karein for: <span id="selectedAnimeTitle" class="text-white"></span>
+            </h2>
+            <button onclick="closeEpisodeBox()" class="text-gray-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <form id="episodeForm" onsubmit="handleCreateEpisode(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <label class="block text-gray-400 mb-1">Episode Number *</label>
+              <input type="number" id="epNumber" required placeholder="1, 2, 3..." class="w-full px-3 py-2 bg-black/40 border border-gray-700 rounded-lg focus:outline-none focus:border-violet-500">
+            </div>
+            <div>
+              <label class="block text-gray-400 mb-1">Episode Title / Name</label>
+              <input type="text" id="epTitle" placeholder="e.g. Enter Naruto Uzumaki" class="w-full px-3 py-2 bg-black/40 border border-gray-700 rounded-lg focus:outline-none focus:border-violet-500">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-gray-400 mb-1">Server 1 Video Embed URL (Primary Hindi Stream) *</label>
+              <input type="url" id="server1Url" required placeholder="https://streamwish.to/e/... ya Filemoon link" class="w-full px-3 py-2 bg-black/40 border border-gray-700 rounded-lg focus:outline-none focus:border-violet-500">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-gray-400 mb-1">Server 2 Video Embed URL (Backup)</label>
+              <input type="url" id="server2Url" placeholder="Optional backup embed link" class="w-full px-3 py-2 bg-black/40 border border-gray-700 rounded-lg focus:outline-none focus:border-violet-500">
+            </div>
+            <div class="md:col-span-2">
+              <button type="submit" class="w-full py-2.5 rounded-lg font-bold bg-violet-600 hover:bg-violet-700 text-white transition">Episode Upload Karein</button>
+            </div>
+          </form>
+
+          <div class="mt-6 border-t border-gray-800 pt-4">
+            <h3 class="text-sm font-bold text-gray-300 mb-3">Is Anime ke Added Episodes:</h3>
+            <div id="episodesList" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+
+        <!-- Anime List Overview -->
+        <div class="glass p-6 rounded-2xl">
+          <h2 class="text-xl font-bold mb-4 flex items-center gap-2 text-gray-200">
+            <i class="fa-solid fa-list-check"></i> Aapke Uploded Anime
+          </h2>
+          <div id="animesGrid" class="space-y-3">
+            <p class="text-gray-500 text-sm">Anime load ho rahe hain...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCBDaY37U8zkzAuUoiGdspKuEYcfNqTxM",
+      authDomain: "vika-toons.firebaseapp.com",
+      projectId: "vika-toons",
+      storageBucket: "vika-toons.firebasestorage.app",
+      messagingSenderId: "147555928932",
+      appId: "1:147555928932:web:345074c3bcf9d14ec30871",
+      measurementId: "G-0SL6FJMHLN"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    let selectedAnimeId = null;
+
+    // Create Anime
+    async function handleCreateAnime(e) {
+      e.preventDefault();
+      const title = document.getElementById("animeTitle").value.trim();
+      const poster = document.getElementById("animePoster").value.trim();
+      const banner = document.getElementById("animeBanner").value.trim() || poster;
+      const genres = document.getElementById("animeGenres").value.split(",").map(g => g.trim()).filter(Boolean);
+      const desc = document.getElementById("animeDescription").value.trim();
+
+      try {
+        await db.collection("animes").add({
+          title,
+          poster,
+          banner,
+          genres,
+          description: desc,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById("animeForm").reset();
+        alert("Anime kamyabi se add ho gaya!");
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    }
+
+    // Load Animes
+    db.collection("animes").orderBy("createdAt", "desc").onSnapshot(snapshot => {
+      const container = document.getElementById("animesGrid");
+      container.innerHTML = "";
+      if (snapshot.empty) {
+        container.innerHTML = "<p class='text-gray-500 text-sm'>Abhi koi anime nahi hai. Left form se pehla anime add karein.</p>";
+        return;
+      }
+      snapshot.forEach(doc => {
+        const a = doc.data();
+        const card = document.createElement("div");
+        card.className = "flex items-center justify-between p-3 bg-black/40 border border-gray-800 rounded-xl hover:border-gray-700 transition";
+        card.innerHTML = `
+          <div class="flex items-center gap-3">
+            <img src="${a.poster}" class="w-12 h-16 object-cover rounded-lg" onerror="this.src='https://via.placeholder.com/48x64?text=Poster'">
+            <div>
+              <h4 class="font-bold text-sm text-gray-100">${a.title}</h4>
+              <p class="text-xs text-gray-500">${a.genres ? a.genres.join(", ") : 'Hindi Anime'}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="openEpisodes('${doc.id}', '${a.title.replace(/'/g, "\\'")}')" class="px-3 py-1.5 text-xs font-semibold bg-violet-600 hover:bg-violet-700 text-white rounded-lg transition flex items-center gap-1">
+              <i class="fa-solid fa-plus"></i> Episodes
+            </button>
+            <button onclick="deleteAnime('${doc.id}')" class="p-2 text-xs text-rose-400 hover:text-rose-300">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    });
+
+    // Open Episode Drawer
+    function openEpisodes(animeId, title) {
+      selectedAnimeId = animeId;
+      document.getElementById("selectedAnimeTitle").innerText = title;
+      document.getElementById("episodeBox").classList.remove("hidden");
+      loadAnimeEpisodes(animeId);
+    }
+
+    function closeEpisodeBox() {
+      document.getElementById("episodeBox").classList.add("hidden");
+      selectedAnimeId = null;
+    }
+
+    // Add Episode
+    async function handleCreateEpisode(e) {
+      e.preventDefault();
+      if (!selectedAnimeId) return;
+
+      const epNum = parseInt(document.getElementById("epNumber").value);
+      const title = document.getElementById("epTitle").value.trim() || `Episode ${epNum}`;
+      const s1 = document.getElementById("server1Url").value.trim();
+      const s2 = document.getElementById("server2Url").value.trim();
+
+      try {
+        await db.collection("animes").doc(selectedAnimeId).collection("episodes").add({
+          number: epNum,
+          title: title,
+          server1: s1,
+          server2: s2,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById("epNumber").value = "";
+        document.getElementById("epTitle").value = "";
+        document.getElementById("server1Url").value = "";
+        document.getElementById("server2Url").value = "";
+      } catch (err) {
+        alert("Error: " + err.message);
+      }
+    }
+
+    // Listen to Episodes of Selected Anime
+    let unsubscribeEp = null;
+    function loadAnimeEpisodes(animeId) {
+      if (unsubscribeEp) unsubscribeEp();
+      const epList = document.getElementById("episodesList");
+      epList.innerHTML = "<p class='text-xs text-gray-500'>Episodes load ho rahe hain...</p>";
+
+      unsubscribeEp = db.collection("animes").doc(animeId).collection("episodes").orderBy("number", "asc").onSnapshot(snap => {
+        epList.innerHTML = "";
+        if (snap.empty) {
+          epList.innerHTML = "<p class='text-xs text-gray-500'>Is anime me abhi tak koi episode nahi hai.</p>";
+          return;
+        }
+        snap.forEach(doc => {
+          const ep = doc.data();
+          const row = document.createElement("div");
+          row.className = "flex justify-between items-center p-2 rounded-lg bg-black/60 text-xs border border-gray-800";
+          row.innerHTML = `
+            <span><strong>EP ${ep.number}:</strong> ${ep.title}</span>
+            <button onclick="deleteEpisode('${animeId}', '${doc.id}')" class="text-rose-500 hover:text-rose-400">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          `;
+          epList.appendChild(row);
+        });
+      });
+    }
+
+    async function deleteAnime(id) {
+      if (confirm("Kya aap sach me ye anime delete karna chahte hain?")) {
+        await db.collection("animes").doc(id).delete();
+        if (selectedAnimeId === id) closeEpisodeBox();
+      }
+    }
+
+    async function deleteEpisode(animeId, epId) {
+      if (confirm("Is episode ko delete karein?")) {
+        await db.collection("animes").doc(animeId).collection("episodes").doc(epId).delete();
+      }
+    }
+  </script>
+</body>
+</html>
