@@ -13,7 +13,6 @@ void main() async {
   runApp(const VikaToonsApp());
 }
 
-
 class VikaToonsApp extends StatelessWidget {
   const VikaToonsApp({super.key});
 
@@ -22,14 +21,7 @@ class VikaToonsApp extends StatelessWidget {
     return MaterialApp(
       title: 'Vika Toons',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF090A0F),
-        primaryColor: const Color(0xFFF97316),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFF97316),
-          surface: Color(0xFF12141C),
-        ),
-      ),
+      theme: ThemeData.dark(),
       home: const HomeScreen(),
     );
   }
@@ -41,9 +33,10 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF090A0F),
       appBar: AppBar(
         title: const Text('⚡ VIKA TOONS', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFF97316))),
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color(0xFF12141C),
         elevation: 0,
       ),
       body: ListView(
@@ -52,32 +45,34 @@ class HomeScreen extends StatelessWidget {
           StreamBuilder<DocumentSnapshot>(
             stream: FirebaseFirestore.instance.collection('app_settings').doc('global_notice').snapshots(),
             builder: (context, snapshot) {
-              if (snapshot.hasData && snapshot.data!.exists) {
-                var notice = snapshot.data!.data() as Map<String, dynamic>;
-                if (notice['enabled'] == true) {
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withOpacity(0.2),
-                      border: Border.all(color: const Color(0xFF6366F1)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(notice['title'] ?? 'Notice', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF818CF8))),
-                        const SizedBox(height: 4),
-                        Text(notice['message'] ?? '', style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                      ],
-                    ),
-                  );
+              if (snapshot.hasData && snapshot.data != null && snapshot.data!.exists) {
+                var data = snapshot.data!.data();
+                if (data != null && data is Map<String, dynamic>) {
+                  if (data['enabled'] == true) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6366F1).withOpacity(0.2),
+                        border: Border.all(color: const Color(0xFF6366F1)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(data['title'] ?? 'Notice', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF818CF8))),
+                          const SizedBox(height: 4),
+                          Text(data['message'] ?? '', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                        ],
+                      ),
+                    );
+                  }
                 }
               }
               return const SizedBox.shrink();
             },
           ),
-          const Text('All Anime Catalog 🔥', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('All Anime Catalog 🔥', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
           const SizedBox(height: 12),
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance.collection('anime').snapshots(),
@@ -88,8 +83,21 @@ class HomeScreen extends StatelessWidget {
                   child: CircularProgressIndicator(color: Color(0xFFF97316)),
                 ));
               }
+              if (snapshot.hasError) {
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text('Database connect hone me samasya: ${snapshot.error}', style: const TextStyle(color: Colors.white70), textAlign: TextAlign.center),
+                  ),
+                );
+              }
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return const Center(child: Text('कोई Anime नहीं मिला। एडमिन पैनल से जोड़ें!'));
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: Text('Koi Anime nahi mila. Admin panel se jodein!', style: TextStyle(color: Colors.white70)),
+                  ),
+                );
               }
 
               final animeList = snapshot.data!.docs;
@@ -129,12 +137,14 @@ class HomeScreen extends StatelessWidget {
                           Expanded(
                             child: ClipRRect(
                               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                              child: Image.network(
-                                anime['poster'] ?? '',
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
-                              ),
+                              child: (anime['poster'] != null && anime['poster'].toString().isNotEmpty)
+                                  ? Image.network(
+                                      anime['poster'],
+                                      width: double.infinity,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
+                                    )
+                                  : const Center(child: Icon(Icons.movie, color: Colors.grey)),
                             ),
                           ),
                           Padding(
@@ -143,7 +153,7 @@ class HomeScreen extends StatelessWidget {
                               anime['title'] ?? 'Unknown',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white),
                             ),
                           ),
                           Padding(
@@ -184,7 +194,11 @@ class EpisodeListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(animeData['title'] ?? 'Episodes')),
+      backgroundColor: const Color(0xFF090A0F),
+      appBar: AppBar(
+        title: Text(animeData['title'] ?? 'Episodes'),
+        backgroundColor: const Color(0xFF12141C),
+      ),
       body: ListView(
         children: [
           if (animeData['banner'] != null && animeData['banner'].toString().isNotEmpty)
@@ -200,12 +214,12 @@ class EpisodeListScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(animeData['title'] ?? '', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Text(animeData['title'] ?? '', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
                 const SizedBox(height: 6),
                 Text(animeData['description'] ?? 'No Synopsis Available', style: const TextStyle(color: Colors.grey, fontSize: 13)),
                 const SizedBox(height: 16),
                 const Divider(color: Color(0xFF1F2330)),
-                const Text('Episodes', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text('Episodes', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
               ],
             ),
           ),
@@ -218,7 +232,7 @@ class EpisodeListScreen extends StatelessWidget {
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.all(16.0),
-                  child: Text('इस Anime के लिए कोई एपिसोड उपलब्ध नहीं है।', style: TextStyle(color: Colors.grey)),
+                  child: Text('Is Anime ke liye koi episode nahi mila.', style: TextStyle(color: Colors.grey)),
                 );
               }
 
@@ -237,17 +251,17 @@ class EpisodeListScreen extends StatelessWidget {
                       width: 45,
                       height: 45,
                       decoration: BoxDecoration(color: const Color(0xFF12141C), borderRadius: BorderRadius.circular(8)),
-                      child: Center(child: Text('${ep['episodeNumber']}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFF97316)))),
+                      child: Center(child: Text('${ep['episodeNumber'] ?? index + 1}', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFF97316)))),
                     ),
-                    title: Text(ep['title'] ?? 'Episode ${ep['episodeNumber']}'),
-                    subtitle: Text('Season ${ep['seasonNumber'] ?? 1}'),
+                    title: Text(ep['title'] ?? 'Episode ${ep['episodeNumber'] ?? index + 1}', style: const TextStyle(color: Colors.white)),
+                    subtitle: Text('Season ${ep['seasonNumber'] ?? 1}', style: const TextStyle(color: Colors.grey)),
                     trailing: const Icon(Icons.play_circle_fill, color: Color(0xFFF97316), size: 32),
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => PlayerScreen(
-                            episodeTitle: ep['title'] ?? 'Episode ${ep['episodeNumber']}',
+                            episodeTitle: ep['title'] ?? 'Episode ${ep['episodeNumber'] ?? index + 1}',
                             servers: servers,
                           ),
                         ),
@@ -313,7 +327,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.episodeTitle)),
+      backgroundColor: const Color(0xFF090A0F),
+      appBar: AppBar(title: Text(widget.episodeTitle), backgroundColor: const Color(0xFF12141C)),
       body: Column(
         children: [
           Container(
@@ -327,14 +342,14 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         aspectRatio: _controller!.value.aspectRatio,
                         child: VideoPlayer(_controller!),
                       )
-                    : const Center(child: Text('वीडियो लोड करने में समस्या आई। सर्वर बदलें।', style: TextStyle(color: Colors.red))),
+                    : const Center(child: Text('Video load nahi hua. Server badlein.', style: TextStyle(color: Colors.red))),
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Select Stream Server:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                const Text('Select Stream Server:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.white)),
                 const SizedBox(height: 10),
                 Row(
                   children: [
@@ -347,7 +362,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           setState(() => currentServerKey = 'server1');
                           _startPlaying(widget.servers['server1']);
                         },
-                        child: const Text('Server 1 (Primary)'),
+                        child: const Text('Server 1', style: TextStyle(color: Colors.white)),
                       ),
                     const SizedBox(width: 8),
                     if (widget.servers['server2'] != null && widget.servers['server2'].toString().isNotEmpty)
@@ -359,7 +374,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           setState(() => currentServerKey = 'server2');
                           _startPlaying(widget.servers['server2']);
                         },
-                        child: const Text('Server 2 (Backup)'),
+                        child: const Text('Server 2', style: TextStyle(color: Colors.white)),
                       ),
                   ],
                 ),
