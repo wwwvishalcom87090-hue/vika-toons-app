@@ -26,8 +26,17 @@ jobs:
         run: |
           flutter create --org com.vikatoons --project-name vika_toons_app .
           cp android/app/google-services.json android/app/src/main/ || true
+          cp android/app/google-services.json android/app/ || true
+          
+          # Internet Permission & App Label
           sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
           sed -i 's/android:label="vika_toons_app"/android:label="Vika Toons"/' android/app/src/main/AndroidManifest.xml
+          
+          # Add Google Services Classpath to root build.gradle
+          sed -i '/dependencies {/a \        classpath "com.google.gms:google-services:4.4.1"' android/build.gradle
+          
+          # Apply Google Services Plugin in app build.gradle
+          echo "apply plugin: 'com.google.gms.google-services'" >> android/app/build.gradle
 
       - name: Get Dependencies
         run: flutter pub get
