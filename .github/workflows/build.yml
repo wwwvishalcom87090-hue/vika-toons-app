@@ -26,6 +26,8 @@ jobs:
         run: |
           flutter create --org com.vikatoons --project-name vika_toons_app .
           cp android/app/google-services.json android/app/src/main/ || true
+          sed -i '/<manifest/a \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="vika_toons_app"/android:label="Vika Toons"/' android/app/src/main/AndroidManifest.xml
 
       - name: Get Dependencies
         run: flutter pub get
@@ -38,5 +40,4 @@ jobs:
         with:
           name: VikaToons-Release-APK
           path: build/app/outputs/flutter-apk/app-release.apk
-          
           
