@@ -24,7 +24,7 @@ jobs:
 
       - name: Create Skeleton Android Project
         run: |
-          flutter create --org com.vikatoons .
+          flutter create --org com.vikatoons --project-name vika_toons_app .
           cp android/app/google-services.json android/app/src/main/ || true
 
       - name: Get Dependencies
@@ -38,4 +38,5 @@ jobs:
         with:
           name: VikaToons-Release-APK
           path: build/app/outputs/flutter-apk/app-release.apk
+          
           
